@@ -1,0 +1,16 @@
+/* styles for author_detail.html */
+.row {
+    margin: 20px 0;
+}
+
+h1 {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+p {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 10px;
+}

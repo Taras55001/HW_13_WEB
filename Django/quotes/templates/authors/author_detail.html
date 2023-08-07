@@ -1,0 +1,16 @@
+{% extends 'quotes/base.html' %}
+{% load static %}
+{% block author_styles %}
+    <link rel="stylesheet" href="{% static 'styles/author_detail.css' %}">
+{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1>{{ author.fullname }}</h1>
+        <p>Date of Birth: {{ author.born_date }}</p>
+        <p>Location: {{ author.born_location }}</p>
+        <p>Description: {{ author.description }}</p>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,12 @@
+{% extends 'quotes/base.html' %}
+
+{% block content %}
+    <h2>Generate Quote</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div style="margin: 20px 50px;">
+        <button type="submit" class="btn btn-primary">Generate</button>
+            </div>
+    </form>
+{% endblock %}

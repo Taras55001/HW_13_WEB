@@ -1,0 +1,30 @@
+{% extends 'quotes/base.html' %}
+{% block add_post_styles %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static '/styles/add_post.css' %}">
+{% endblock %}
+{% block content %}
+<div class="form-container">
+  <h2>Add Post</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="{{ form.quote.id_for_label }}">Quote:</label>
+        {{ form.quote }}
+    </div>
+    <div class="form-group">
+        <label for="{{ form.author.id_for_label }}">Author:</label>
+        {{ form.author }}
+    </div>
+    <div class="tags">
+        <label for="{{ form.tags.id_for_label }}">Tags:</label>
+        {{ form.tags }}
+    </div>
+    <div class="form-group">
+        <label for="new_tags">New Tags:</label>
+        <input type="text" name="new_tags" id="new_tags">
+    </div>
+    <button type="submit" class="btn btn-primary">Add Post</button>
+  </form>
+</div>
+{% endblock %}

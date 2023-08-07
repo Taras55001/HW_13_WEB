@@ -1,0 +1,17 @@
+{% extends 'quotes/base.html' %}
+
+{% block content %}
+    <h2>Generated Quote</h2>
+    <p>Author: {{ quote.author }}</p>
+    <p>{{ quote }}</p>
+    <p>Random Tags:</p>
+    <ul>
+        {% for tag in quote.tags.all %}
+            <li>{{ tag.name }}</li>
+        {% endfor %}
+    </ul>
+    <form method="post" action="{% url 'quotes:root' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Publish</button>
+    </form>
+{% endblock %}
