@@ -1,7 +1,9 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://ulcfqvkt:P_S-uCx7MWvtdHNk6NFos2lgFBmyvwmW@dumbo.db.elephantsql.com/ulcfqvkt"
+from src.conf.config import settings
+
+SQLALCHEMY_DATABASE_URL = settings.sqlalchemy_database_url
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

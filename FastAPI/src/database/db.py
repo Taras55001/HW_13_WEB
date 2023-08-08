@@ -1,12 +1,15 @@
 import contextlib
+import redis
 from typing import AsyncIterator
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-from src.conf.config import config
+from src.conf.config import config, redis_config
+
 
 class Base(DeclarativeBase):
     pass
+
 
 class DatabaseSessionManager:
 
@@ -28,7 +31,15 @@ class DatabaseSessionManager:
         finally:
             session.close()
 
+
+class RedisSessionManager:
+    def __init__(self, r):
+        self.redis = redis.Redis(host=r.host, port=r.port, db=r.db)
+
+
 sessionmanager = DatabaseSessionManager(config.DB_URL)
+redis_sessionmanager = RedisSessionManager(redis_config)
+
 
 # Dependency
 async def get_db():
