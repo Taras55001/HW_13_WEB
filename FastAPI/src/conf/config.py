@@ -1,20 +1,4 @@
-import os
-
 from pydantic_settings import BaseSettings
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# URL = os.getenv('SQLALCHEMY_DATABASE_URL')
-# NAME = os.getenv('POSTGRES_DB')
-# USER = os.getenv('POSTGRES_USER')
-# PASSWORD = os.getenv('POSTGRES_PASSWORD')
-# HOST = 'localhost'
-# PORT = os.getenv('POSTGRES_PORT')
-# REDIS_HOST = 'localhost'
-# REDIS_PORT = 6379
-# REDIS_DB = 0
-
 
 
 class Settings(BaseSettings):
@@ -34,6 +18,9 @@ class Settings(BaseSettings):
     redis_host: str
     redis_port: int
     redis_db: int
+    cloudinary_name: str
+    cloudinary_api_key: str
+    cloudinary_api_secret: str
 
     class Config:
         env_file = ".env"
@@ -43,7 +30,7 @@ class Settings(BaseSettings):
 settings = Settings()
 
 class Config:
-    DB_URL = settings.sqlalchemy_database_url#f'postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}:{PORT}/{NAME}'
+    DB_URL = settings.sqlalchemy_database_url
 
 
 class RedisConfig:

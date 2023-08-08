@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
+from sqlalchemy.exc import IntegrityError
 from src.database.models import Contact, User
 from src.schemas import ContactResponse
 
@@ -19,14 +20,18 @@ async def get_contact(contact_id: int, db: AsyncSession, user: User):
 
 
 async def create_contact(body: ContactResponse, db: AsyncSession, user: User):
-    contact = Contact(name=body.name, surname=body.surname, birthday=body.birthday, phone=body.phone, email=body.email,
-                      user=user)
-    if body.description:
-        contact.description = body.description
-    db.add(contact)
-    await db.commit()
-    await db.refresh(contact)
-    return contact
+    try:
+        contact = Contact(name=body.name, surname=body.surname, birthday=body.birthday, phone=body.phone, email=body.email,
+                          user=user)
+        if body.description:
+            contact.description = body.description
+        db.add(contact)
+        await db.commit()
+        await db.refresh(contact)
+        return contact
+    except IntegrityError as e:
+        await db.rollback()
+        return None
 
 
 async def update_contact(contact_id: int, body: ContactResponse, db: AsyncSession, user: User):

@@ -1,6 +1,6 @@
 from datetime import date
-
-from sqlalchemy import String, ForeignKey, Date
+from sqlalchemy.sql.sqltypes import DateTime
+from sqlalchemy import String, ForeignKey, func, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database.db import Base
@@ -16,6 +16,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(150), unique=True, index=True, nullable=False)
     refresh_token: Mapped[str] = mapped_column(String(255), nullable=True)
     confirmed: Mapped[bool] = mapped_column(default=False)
+    avatar: Mapped[str] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[date] = mapped_column('crated_at', DateTime, default=func.now(), nullable=True)
 
 
 class Contact(Base):

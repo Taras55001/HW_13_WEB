@@ -1,8 +1,7 @@
-import logging
-from typing import List
-
 from fastapi import APIRouter, HTTPException, Depends, Path, Query, status, BackgroundTasks, Security, Request
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
+
+from fastapi_limiter.depends import RateLimiter
 
 from src.database.db import get_db
 from src.schemas import UserModel, TokenModel, RequestEmail, UserResponseSignupModel
@@ -70,7 +69,9 @@ async def confirmed_email(token: str, db: AsyncSession = Depends(get_db)):
     return {"message": "Email confirmed"}
 
 
-@router.post('/request_email')
+@router.post('/request_email',
+             description='No more than 10 requests per 10 minutes',
+             dependencies=[Depends(RateLimiter(times=10, seconds=600))])
 async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, request: Request,
                         db: AsyncSession = Depends(get_db)):
     user = await repository_users.get_user_by_email(body.email, db)

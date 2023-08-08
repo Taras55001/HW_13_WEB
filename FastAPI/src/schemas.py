@@ -59,7 +59,6 @@ class ContactModel(BaseModel):
     birthday: Optional[date] = Field(None)
     phone: Optional[str] = Field('1234567890', min_length=10, max_length=14)
     email: Optional[EmailStr]
-    user_id: int
 
 
 class ContactResponse(ContactModel):

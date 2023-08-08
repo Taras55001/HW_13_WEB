@@ -2,9 +2,9 @@ from typing import List
 
 from fastapi import APIRouter, HTTPException, Depends, Path, Query, status, Security
 from fastapi.security import HTTPAuthorizationCredentials
+from fastapi_limiter.depends import RateLimiter
 
 from src.database.db import get_db
-from src.database.models import User
 from src.routes.auth import security
 from src.schemas import ContactResponse, ContactModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +15,9 @@ from src.services.auth import auth_service
 router = APIRouter(prefix="/contacts", tags=["contacts"])
 
 
-@router.get("/", response_model=List[ContactResponse], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[ContactResponse], status_code=status.HTTP_200_OK,
+             description='No more than 10 requests per minute',
+             dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def get_contacts(limit: int = Query(10, ge=10, le=500), offset: int = Query(0, ge=0, le=200),
                        credentials: HTTPAuthorizationCredentials = Security(security),
                        db: AsyncSession = Depends(get_db)):
@@ -30,7 +32,9 @@ async def get_contacts(limit: int = Query(10, ge=10, le=500), offset: int = Quer
     return contacts
 
 
-@router.get("/{contact_id}", response_model=ContactResponse)
+@router.get("/{contact_id}", response_model=ContactResponse,
+             description='No more than 10 requests per minute',
+             dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def get_contact(contact_id: int = Path(ge=1), credentials: HTTPAuthorizationCredentials = Security(security),
                       db: AsyncSession = Depends(get_db)):
     token = credentials.credentials
@@ -49,7 +53,9 @@ async def get_contact(contact_id: int = Path(ge=1), credentials: HTTPAuthorizati
     return contact
 
 
-@router.post("", response_model=ContactResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ContactResponse, status_code=status.HTTP_201_CREATED,
+             description='No more than 5 requests per minute',
+             dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def create_contact(body: ContactModel,
                          credentials: HTTPAuthorizationCredentials = Security(security),
                          db: AsyncSession = Depends(get_db)):
@@ -61,10 +67,14 @@ async def create_contact(body: ContactModel,
             detail="Unauthorized",
         )
     contact = await response_contacts.create_contact(body, db, user)
+    if not contact:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Contact already exist")
     return contact
 
 
-@router.put("/{contact_id}", response_model=ContactResponse, status_code=status.HTTP_201_CREATED)
+@router.put("/{contact_id}", response_model=ContactResponse, status_code=status.HTTP_201_CREATED,
+             description='No more than 10 requests per minute',
+             dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def update_contact(body: ContactModel, contact_id: int = Path(ge=1),
                          credentials: HTTPAuthorizationCredentials = Security(security),
                          db: AsyncSession = Depends(get_db)):
@@ -84,7 +94,9 @@ async def update_contact(body: ContactModel, contact_id: int = Path(ge=1),
     return contact
 
 
-@router.delete("/{contact_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{contact_id}", status_code=status.HTTP_204_NO_CONTENT,
+             description='No more than 5 requests per minute',
+             dependencies=[Depends(RateLimiter(times=5, seconds=60))])
 async def remove_contact(contact_id: int = Path(ge=1),
                          credentials: HTTPAuthorizationCredentials = Security(security),
                          db: AsyncSession = Depends(get_db)):
@@ -104,7 +116,9 @@ async def remove_contact(contact_id: int = Path(ge=1),
     return contact
 
 
-@router.get("/search/{user_id}", response_model=ContactResponse, status_code=status.HTTP_200_OK)
+@router.get("/search/{user_id}", response_model=ContactResponse, status_code=status.HTTP_200_OK,
+             description='No more than 15 requests per minute',
+             dependencies=[Depends(RateLimiter(times=15, seconds=60))])
 async def search_contact(credentials: HTTPAuthorizationCredentials = Security(security),
                          contact_name: str = Query(None, min_length=2),
                          surname: str = Query(None, min_length=2),
@@ -127,7 +141,9 @@ async def search_contact(credentials: HTTPAuthorizationCredentials = Security(se
     return contact
 
 
-@router.get("/birthdays/{user_id}", response_model=List[ContactResponse])
+@router.get("/birthdays/{user_id}", response_model=List[ContactResponse],
+             description='No more than 10 requests per minute',
+             dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def upcoming_birthdays(credentials: HTTPAuthorizationCredentials = Security(security),
                              db: AsyncSession = Depends(get_db)):
     token = credentials.credentials

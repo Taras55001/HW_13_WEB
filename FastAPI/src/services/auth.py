@@ -1,18 +1,20 @@
-import os
 from typing import Dict, Any, Optional
+import pickle
 
 from fastapi import HTTPException, status, Depends
-from dotenv import load_dotenv
 from jose import JWTError, jwt
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.db import get_db
+from src.database.db import get_db, redis_sessionmanager
 from src.repository import users as repository_users
 
+from src.conf.config import settings
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
 
 class PasswordManager:
     def __init__(self):
@@ -50,6 +52,7 @@ class JWTManager:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid scope for token')
         except JWTError:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate credentials')
+
     def decode_email_token(self, token: str = Depends(oauth2_scheme)):
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
@@ -63,7 +66,8 @@ class JWTManager:
 
 
 class AuthService:
-    def __init__(self, password_manager, jwt_manager, user_repository):
+    def __init__(self, password_manager, jwt_manager, user_repository, redis):
+        self.r = redis
         self.password_manager = password_manager
         self.jwt_manager = jwt_manager
         self.user_repository = user_repository
@@ -79,9 +83,15 @@ class AuthService:
             email = self.jwt_manager.decode_token(token)
         except JWTError:
             return None
-        user = await self.user_repository.get_user_by_email(email, db)
+        user = self.r.redis.get(f"user:{email}")
         if user is None:
-            return None
+            user = await self.user_repository.get_user_by_email(email, db)
+            if user is None:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate credentials')
+            self.r.redis.set(f"user:{email}", pickle.dumps(user))
+            self.r.redis.expire(f"user:{email}", 900)
+        else:
+            user = pickle.loads(user)
         return user
 
     async def create_access_token(self, user):
@@ -102,8 +112,8 @@ class AuthService:
         return token
 
 
-load_dotenv()
-secret_key = os.getenv("PASSWORD")
-algorithm = "HS256"
 
-auth_service = AuthService(PasswordManager(), JWTManager(secret_key, algorithm), repository_users)
+secret_key = settings.secret_key
+algorithm = settings.algorithm
+
+auth_service = AuthService(PasswordManager(), JWTManager(secret_key, algorithm), repository_users, redis_sessionmanager)
